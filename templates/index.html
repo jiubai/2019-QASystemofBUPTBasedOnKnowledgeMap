@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>基于知识图谱的校园信息化领域问答系统</title>
+    <!--Bootstrap Stylesheet [ REQUIRED ]-->
+    <link href="../static/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="shortcut icon" href="../static/images/logo.jpg">
+    <!--Nifty Stylesheet [ REQUIRED ]-->
+    <link href="../static/css/nifty.min.css" rel="stylesheet">
+    <!--Nifty Premium Icon [ DEMONSTRATION ]-->
+    <link href="../static/css/nifty-demo-icons.min.css" rel="stylesheet">
+    <!--Demo [ DEMONSTRATION ]-->
+    <link href="../static/css/nifty-demo-icons.min.css" rel="stylesheet">
+    <link href="../static/css/nifty-demo.min.css" rel="stylesheet">
+    <link href="../static/css/font-awesome.min.css" rel="stylesheet">
+    <link href="../static/css/wiki.css" rel="stylesheet">
+    <!--JAVASCRIPT-->
+    <!--=================================================-->
+    <!--Pace - Page Load Progress Par [OPTIONAL]-->
+    <link href="../static/css/pace.min.css" rel="stylesheet">
+
+    <script src="../static/js/pace.min.js"></script>
+    <!--jQuery [ REQUIRED ]-->
+    <script src="../static/js/jquery-2.2.4.min.js"></script>
+    <!--BootstrapJS [ RECOMMENDED ]-->
+    <script src="../static/js/bootstrap.min.js"></script>
+    <!--NiftyJS [ RECOMMENDED ]-->
+    <script src="../static/js/nifty.min.js"></script>
+    <script src="../static/js/icons.js"></script>
+    <script src="../static/js/echarts.min.js"></script>
+    <!--=================================================-->
+    <!--Demo script [ DEMONSTRATION ]-->
+    <script src="../static/js/nifty-demo.min.js"></script>
+</head>
+<style type="text/css">
+    * {
+        font-size: 16px;
+        padding: 0;
+        margin: 0;
+    }
+    html,
+    body {
+        font-size: 14px;
+        font-family: "微软雅黑", Helvetica, Tahoma, Arial, sans-serif;
+        color:#000;
+        background-color: rgb(14, 146, 179);
+        margin: 0;
+        padding: 0;
+    }
+    #container {
+        background-position: 100% 100%;
+        background-size: 100% auto;
+    }
+    .main {
+        position: relative;
+        margin: 20px auto;
+        border: 1px solid steelblue;
+        width: 630px;
+        height: 600px;
+    }
+    .msgInput {
+        display: block;
+        width: 606px;
+        height: 60px;
+        margin: 10px auto;
+    }
+
+    .sendbtn {
+        position: absolute;
+        width: 100px;
+        height: 29px;
+        bottom: 5px;
+        right: 10px;
+    }
+
+    .content {
+        list-style: none;
+        width: 610px;
+        height: 480px;
+        margin: 5px auto;
+        border: 1px dotted #D1D3D6;
+        overflow-y: scroll;
+    }
+
+    .msgContent {
+        width: auto;
+        max-width: 450px;
+        height: auto;
+        word-break: break-all;
+        margin: 5px;
+        padding: 3px;
+        border-radius: 5px;
+    }
+
+    .content .left {
+        float: left;
+        text-align: left;
+        background-color: lightgrey;
+    }
+
+    .content .right {
+        float: right;
+        text-align: right;
+        background-color: yellowgreen;
+    }
+    
+
+    img {
+        border: 5%;
+        width: auto;
+        height: auto;
+        max-height: 90%;
+        max-width: 90%;
+    }
+
+    .cf:before,
+    .cf:after {
+        display: table;
+        content: "";
+    }
+
+    .cf:after {
+        clear: both;
+    }
+
+    .cf {
+        *zoom: 1;
+    }
+
+    canvas {
+        position: fixed;
+        top: 0px;
+    }
+</style>
+<script type="text/javascript">
+    window.onload = function () {
+        var input = document.getElementById('msg_input');//查找缓存
+        document.getElementById('sendbtn').onclick = function () {
+            sendMsg();
+        }
+        //enter键 发送
+        document.onkeypress = function (event) {
+            var e = event || window.event;
+            var keycode = e.keyCode || e.which;
+            console.log(e)
+            if (keycode == 13) {//按下enter键
+                sendMsg()
+            }
+        }
+        function sendMsg() {
+            var input = document.getElementById('msg_input');//查找缓存
+            var ul = document.getElementById('content');
+            var newLi = document.createElement('li');
+            newLi.innerHTML = input.value;
+            newLi.className = 'msgContent right';
+            ul.appendChild(newLi);
+            var div = document.createElement('div');
+            div.style = 'clear:both';
+            ul.appendChild(div);
+            ajax({
+                url: '/obtain_answer?question=' + input.value,
+                success: function (res) {
+                    console.log(res);
+                    var newLi = document.createElement('li');
+                    newLi.innerHTML = res;
+
+                    newLi.className = 'msgContent left';
+                    ul.appendChild(newLi);
+                    var div = document.createElement('div');
+                    div.style = 'clear:both';
+                    ul.appendChild(div);
+                    input.value = '';
+                    newLi.scrollIntoView();//将元素滚动到可见位置
+                }
+            })
+
+            input.value = '';
+            newLi.scrollIntoView();//将元素滚动到可见位置
+        }
+
+    }
+
+    function ajax(obj) {
+        var xhr = null;
+        if (window.ActiveXObject) {
+            xhr = new ActiveXObject('Microsoft.XMLHTTP')
+        } else {
+            xhr = new XMLHttpRequest();
+        }
+
+        //打开与服务器的连接
+        if (obj.method) {
+            xhr.open(obj.method, obj.url, true);
+        } else {
+            xhr.open('get', obj.url, true);
+        }
+        xhr.setRequestHeader("Content-Type",
+            "application/x-www-form-urlencoded");
+        xhr.setRequestHeader("Authorization",
+            "APPCODE 3e9dfb924f464e9593a95f9d2bbf4348")
+
+        xhr.onreadystatechange = function () {
+
+            if (xhr.readyState == 4) {
+                //数据接收完毕
+                if (xhr.status == 200) {
+                    //console.log('请求成功',xhr.responseText)
+                    if (obj.success) {
+                        obj.success(xhr.responseText)
+                    }
+
+                } else {
+                    //console.log(xhr.status,'请求出错')
+                    if (obj.failure) {
+                        obj.failure('请求失败')
+                    }
+                }
+            }
+        }
+        if (obj.method == undefined || obj.method.toLowerCase() == 'get') {
+            xhr.send(null);
+        } else {
+            xhr.send(obj.params);
+
+        }
+    }
+</script>
+<body>
+    <div id="container" class="effect aside-float aside-bright mainnav-lg">
+
+        <header id="navbar">
+            <div id="navbar-container" class="boxed">
+
+                <!--Brand logo & name-->
+                <!--================================-->
+                <div class="navbar-header">
+                    <a href="{{ url_for('index') }}" class="navbar-brand">
+                        <img src="../static/images/logo.jpg" alt="Nifty Logo" class="brand-icon">
+                        <div class="brand-title">
+                            <span class="brand-text">智慧问答</span>
+                        </div>
+                    </a>
+                </div>
+                <!--================================-->
+                <!--End brand logo & name-->
+
+
+                <!--Navbar Dropdown-->
+                <!--================================-->
+                <div class="navbar-content clearfix">
+                    <ul class="nav navbar-top-links pull-left">
+                        <h4>基于知识图谱的校园信息化领域问答系统</h4>
+                    </ul>
+                </div>
+                <!--================================-->
+                <!--End Navbar Dropdown-->
+
+            </div>
+        </header>
+        <!--===================================================-->
+        <!--END NAVBAR-->
+
+        <div class="boxed">
+
+            <!--CONTENT CONTAINER-->
+            <!--===================================================-->
+            <div id="content-container">
+
+                <!--Page content-->
+                <!--===================================================-->
+                <div id="page-content">
+
+                    <div class="row">
+                        <div class="col-lg-6">
+                            <canvas id="canvas" width="1293" height="717"></canvas>
+                            <div id="main" class="main">
+                                <ul id="content" class="content">
+                                    <li class="msgContent left">你好，关于北邮的校园信息化领域有什么问题可以问我哦</li>
+                                    <div style="clear: both"></div>
+                                </ul>
+                                <textarea id="msg_input" class="msgInput"></textarea>
+                                <button id="sendbtn" class="sendbtn">发送</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row" style="height: 40px;"></div>
+                </div>
+                <!--===================================================-->
+                <!--End page content-->
+
+
+            </div>
+            <!--===================================================-->
+            <!--END CONTENT CONTAINER-->
+
+
+        </div>
+
+        <!-- FOOTER -->
+        <!--===================================================-->
+        <footer id="footer">
+
+            <p class="pad-lft">Copyright&#0169; 2019 沈国鑫 &nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;All Rights Reserved </p>
+
+        </footer>
+        <!--===================================================-->
+        <!-- END FOOTER -->
+
+        <!-- SCROLL PAGE BUTTON -->
+        <!--===================================================-->
+        <button class="scroll-top btn">
+            <i class="pci-chevron chevron-up"></i>
+        </button>
+        <!--===================================================-->
+    </div>
+    <!--===================================================-->
+    <!-- END OF CONTAINER -->
+
+</body>
+
+</html>
