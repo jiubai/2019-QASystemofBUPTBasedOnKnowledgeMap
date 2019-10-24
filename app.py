@@ -1,13 +1,13 @@
-from flask import Flask, render_template, request, jsonify
-from query_question import Query
-from redis_db import get_data_from_db_by_name, generate_html_by_data
+from flask import Flask, render_template, request
+from main import Query
 
-from redis_db import update_history_question, update_common_question
-from redis_db import get_history_question, get_common__question
-from redis_db import update_QA_db
+from utils.redis_db import get_common__question, get_history_question
+import warnings
+
+warnings.filterwarnings("ignore")
 app = Flask(__name__)
-update_QA_db()
-query = Query()
+
+
 @app.route('/', methods=['GET', 'POST'])
 @app.route('/index', methods=['GET', 'POST'])
 def index(name=None):
@@ -16,18 +16,35 @@ def index(name=None):
 
 @app.route('/obtain_answer')
 def obtain_answer():
-
     question = request.args.get('question')
     answer = query.query(question)
-    all_data = get_data_from_db_by_name(name=answer)
-    answer = generate_html_by_data(all_data)
-    print(answer)
-    update_history_question(question)
-    update_common_question(question)
+    # answer = "测试"
+    return answer
+
+
+@app.route('/update_history_answer')
+def update_history_answer():
+    # question = request.args.get('question')
+    # update_history_question(question)
+    history_question = get_history_question()
+    answer = ""
+    for question in history_question:
+        answer += "<li><a href='javascript:void(0);' onclick='LinkChatSendClient(this.innerHTML)'>" + question + "</li>"
+    return answer
+
+
+@app.route('/update_common_answer')
+def update_common_answer():
+    # question = request.args.get('question')
+    # update_common_question(question)
+    common_question = get_common__question()
+    answer = ""
+    for question in common_question:
+        answer += "<li><h2><a href='javascript:void(0);' onclick='LinkChatSendClient(this.innerHTML)'>" + question + "</a></h2></li>"
     return answer
 
 
 if __name__ == '__main__':
-    # app.run(host='127.0.0.1', port=5000,debug=True)
-    app.debug = True
+    query = Query()
+    app.debug = False
     app.run()

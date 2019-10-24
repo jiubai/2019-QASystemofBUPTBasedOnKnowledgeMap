@@ -11,15 +11,17 @@
 '''
 
 # here put the import lib
+from __future__ import absolute_import
 import redis
 import base64
-import os
-from PIL import Image
-from read_words import ReadWords
+from utils.read_words import ReadWords
 import datetime
+import os
+from conf.path_config import projectdir
+
 extime = datetime.datetime(2020, 9, 8, 15, 19, 10)
 r0 = redis.Redis(host='127.0.0.1', port=6379, db=0)
-r1 = redis.Redis(host='127.0.0.1', port=6379, db=1)
+r1 = redis.Redis(host='127.0.0.1', port=6379, db=2)
 '''
 存储提取到redis数据库中
 '''
@@ -46,14 +48,15 @@ def get_history_question():
 
 def update_common_question(question):
     """
-    保存常见十条问题；
+    保存常见问题；
     """
     r1.zincrby('common_question', value=question, amount=1)
     r1.expireat('common_question', extime)
 
 
 def get_common__question():
-    return [_[0].decode('utf-8') for _ in r1.zrange("common_question", start=0, end=5, desc=False, withscores=True, score_cast_func=int)]
+    return [_[0].decode('utf-8') for _ in
+            r1.zrange("common_question", start=0, end=3, desc=True, withscores=True, score_cast_func=int)]
 
 
 def pic2data(file):
@@ -69,6 +72,7 @@ def data2pic(data, filename="temp.jpeg"):
 
 
 def update_QA_db():
+    remove_temp_pic()
     read_word = ReadWords()
     questions = read_word.questions
     contents = read_word.contents
@@ -78,8 +82,8 @@ def update_QA_db():
             continue
         print("增加新问题：{}".format(question))
         content = contents[index]
-        pics = read_word.get_pic_from_word(
-            './processed_question/{}.docx'.format(question))
+        pics = read_word.get_pic_from_word(os.path.join(projectdir,
+                                                        'processed_question/{}.docx'.format(question)))
         final_result = []
         _ = 0
         flag = True
@@ -90,7 +94,8 @@ def update_QA_db():
             else:
                 try:
                     pic_data = pic2data(
-                        "./static/tempImages/{}".format(pics[_]))
+                        os.path.join(
+                            projectdir, "static/tempImages/{}".format(pics[_])))
                     final_result.append(pics[_])  # 1代表图片信息
                     final_result.append(pic_data)
                     _ += 1
@@ -106,11 +111,13 @@ def update_QA_db():
             r0.lpush(question, d)
         r0.expireat(question, extime)
         print("增加新问题：{}成功！".format(question))
+    print("完成更新问题库！")
 
 
 def remove_temp_pic():
-    for i in os.listdir("./static/tempImages"):
-        os.remove(os.path.join("./static/tempImages", i))
+    for i in os.listdir(os.path.join(projectdir, "static/tempImages")):
+        os.remove(os.path.join(os.path.join(
+            projectdir, "static/tempImages", i)))
 
 
 def get_data_from_db_by_name(name):
@@ -119,7 +126,7 @@ def get_data_from_db_by_name(name):
     imageName = ""
     all_data = []
     for index in range(r0.llen(name)):
-        data = r0.lindex(name, r0.llen(name)-index-1).decode("utf-8")
+        data = r0.lindex(name, r0.llen(name) - index - 1).decode("utf-8")
         if data == "0":
             txtOrPic = True
         elif 'image' in data:
@@ -128,8 +135,9 @@ def get_data_from_db_by_name(name):
         else:
             if not txtOrPic:
                 data2pic(
-                    data, filename="./static/tempImages/{}".format(imageName))
-                data = "./static/tempImages/{}".format(imageName)
+                    data, filename=os.path.join(
+                        projectdir, "static/tempImages/{}".format(imageName)))
+                data = "../static/tempImages/{}".format(imageName)
         all_data.append(data)
     return all_data
 
@@ -144,14 +152,19 @@ def generate_html_by_data(data):
             txtOrPic = False
         else:
             if txtOrPic:
-                html += '<p>'+d+'</p>'
+                html += '<p>' + d + '</p>'
             else:
-                html += '<img src=".{}"  width:auto height:100%;>'.format(
+                html += '<img src="{}"  width:auto height:100%;>'.format(
                     d.replace('\\', '/'))
     html += '</div>'
     return html
 
 
 if __name__ == "__main__":
-    data = get_data_from_db_by_name("Mac笔记本如何连接BUPT-Portal？")
-    print(data)
+    # data = get_data_from_db_by_name("Mac笔记本如何连接BUPT-Portal？")
+    # print(data)
+    remove_temp_pic()
+    print(get_common__question())
+
+    print("********************************")
+    print(get_history_question())
